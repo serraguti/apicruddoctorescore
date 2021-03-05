@@ -68,5 +68,20 @@ namespace ApiCrudDoctores.Repositories
             }
             this.context.SaveChanges();
         }
+
+        public List<String> GetEspecialidades()
+        {
+            var consulta = (from datos in this.context.Doctores
+                            select datos.Especialidad).Distinct();
+            return consulta.ToList();
+        }
+
+        public List<Doctor> GetDoctoresEspecialidad(List<String> especialidades)
+        {
+            var consulta = from datos in this.context.Doctores
+                           where especialidades.Contains(datos.Especialidad)
+                           select datos;
+            return consulta.ToList();
+        }
     }
 }
