@@ -1,5 +1,5 @@
 ﻿using ApiCrudDoctores.Data;
-using NuGetDoctoresModels;
+using ApiCrudDoctores.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -21,7 +21,7 @@ namespace ApiCrudDoctores.Repositories
             return this.context.Doctores.ToList();
         }
 
-        public Doctor BuscarDoctor(int id)
+        public Doctor FindDoctor(int id)
         {
             return this.context.Doctores
                 .SingleOrDefault(x => x.IdDoctor == id);
@@ -29,19 +29,31 @@ namespace ApiCrudDoctores.Repositories
 
         public void DeleteDoctor(int id)
         {
-            Doctor doctor = this.BuscarDoctor(id);
+            Doctor doctor = this.FindDoctor(id);
             this.context.Doctores.Remove(doctor);
             this.context.SaveChanges();
         }
 
-        public void InsertDoctor(int id, String apellido, String especialidad
+        private int GetMaxIdDoctor()
+        {
+            if (this.context.Doctores.Count() == 0)
+            {
+                return 1;
+            }
+            else
+            {
+                return this.context.Doctores.Max(z => z.IdDoctor) + 1;
+            }
+        }
+
+        public void InsertDoctor(String apellido, String especialidad
             , int hospital, int salario)
         {
             Doctor doctor = new Doctor();
-            doctor.IdDoctor = id;
+            doctor.IdDoctor = this.GetMaxIdDoctor();
             doctor.Apellido = apellido;
             doctor.Especialidad = especialidad;
-            doctor.Hospital = hospital;
+            doctor.IdHospital = hospital;
             doctor.Salario = salario;
             this.context.Doctores.Add(doctor);
             this.context.SaveChanges();
@@ -50,22 +62,11 @@ namespace ApiCrudDoctores.Repositories
         public void UpdateDoctor(int id, String apellido, String especialidad
             , int hospital, int salario)
         {
-            Doctor doctor = this.BuscarDoctor(id);
+            Doctor doctor = this.FindDoctor(id);
             doctor.Apellido = apellido;
             doctor.Especialidad = especialidad;
-            doctor.Hospital = hospital;
+            doctor.IdHospital = hospital;
             doctor.Salario = salario;
-            this.context.SaveChanges();
-        }
-
-        public void IncrementarSalario(int incremento, int hospital)
-        {
-            List<Doctor> doctores = this.context.Doctores
-                .Where(x => x.Hospital == hospital).ToList();
-            foreach (Doctor doc in doctores)
-            {
-                doc.Salario += incremento;
-            }
             this.context.SaveChanges();
         }
 
@@ -76,12 +77,31 @@ namespace ApiCrudDoctores.Repositories
             return consulta.ToList();
         }
 
-        public List<Doctor> GetDoctoresEspecialidad(List<String> especialidades)
+        public List<Doctor> GetDoctoresEspecialidad(string especialidad)
+        {
+            var consulta = from datos in this.context.Doctores
+                           where datos.Especialidad == especialidad
+                           select datos;
+            return consulta.ToList();
+        }
+
+        public List<Doctor> GetDoctoresEspecialidades(List<string> especialidades)
         {
             var consulta = from datos in this.context.Doctores
                            where especialidades.Contains(datos.Especialidad)
                            select datos;
             return consulta.ToList();
+        }
+
+        public void UpdateSalarioDoctores(string especialidad, int incremento)
+        {
+            List<Doctor> doctores =
+                this.GetDoctoresEspecialidad(especialidad);
+            foreach (Doctor doc in doctores)
+            {
+                doc.Salario += incremento;
+            }
+            this.context.SaveChanges();
         }
     }
 }
